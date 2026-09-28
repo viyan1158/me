@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NHAI Toll Professional System</title>
+    <style>
+        :root { --primary: #004a99; --secondary: #28a745; --light: #f4f7f6; --dark: #0d1137; }
+        
+        body { font-family: 'Segoe UI', sans-serif; background: var(--light); margin: 0; overflow-x: hidden; }
+        .hidden { display: none !important; }
+
+        /* --- LOGIN PAGE --- */
+        #login-page {
+            background: var(--dark);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+        .login-card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            color: black;
+            text-align: center;
+            width: 320px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+        .login-card input { width: 90%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 6px; }
+        .login-btn { width: 100%; padding: 12px; background: var(--secondary); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+
+        /* --- MAIN APP --- */
+        .container { max-width: 700px; margin: 20px auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); text-align: center; }
+        
+        .vehicle-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 20px 0; }
+        .card { border: 2px solid #ddd; padding: 10px; border-radius: 8px; cursor: pointer; transition: 0.3s; background: white; }
+        .card img { width: 100%; height: 60px; object-fit: contain; margin-bottom: 5px; }
+        .card.selected { border-color: var(--secondary); background: #eaffea; transform: translateY(-3px); }
+        
+        input#vNo { width: 80%; padding: 12px; margin: 10px 0; font-size: 18px; text-transform: uppercase; border: 2px solid var(--primary); border-radius: 5px; }
+        .action-btn { background: var(--primary); color: #fff; border: none; padding: 15px 30px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 16px; }
+
+        /* --- QR & DETAILS SIDE-BY-SIDE --- */
+        #qr-area { 
+            margin-top: 20px; 
+            padding: 20px; 
+            background: #f0fff0; 
+            border: 2px solid var(--secondary); 
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            flex-wrap: wrap;
+        }
+        .qr-details { text-align: left; font-size: 14px; line-height: 1.6; }
+        .qr-details b { color: var(--primary); }
+
+        /* --- EXACT MATCH ORIGINAL SLIP STYLES --- */
+        #receipt { 
+            display: none; 
+            width: 76mm;
+            background: white; 
+            color: #000;
+            font-family: 'Courier New', Courier, monospace;
+            padding: 4mm 3mm; 
+            box-sizing: border-box; 
+            margin: 0 auto; 
+            border: 1px solid #000; 
+        }
+
+        .receipt-header { 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            border-bottom: 1px solid #000; 
+            padding-bottom: 6px; 
+            margin-bottom: 6px; 
+        }
+        .receipt-header img { 
+            width: 50px; 
+            height: 40px; 
+            object-fit: contain; 
+            margin-right: 4px; 
+        }
+        .header-text { 
+            flex: 1; 
+            text-align: center; 
+            font-weight: bold; 
+            font-size: 10px; 
+            line-height: 1.2; 
+        }
+
+        table.receipt-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            font-size: 10.5px; 
+            font-weight: bold;
+            line-height: 1.35;
+        }
+        table.receipt-table td { 
+            padding: 1px 0; 
+            vertical-align: top; 
+        }
+        .col-label { 
+            width: 50%; 
+            text-transform: uppercase; 
+        }
+        .divider { 
+            border: none; 
+            border-top: 1px solid #000; 
+            margin: 5px 0; 
+        }
+
+        .footer-text {
+            font-size: 10px;
+            font-weight: bold;
+            margin-top: 6px;
+            line-height: 1.4;
+            text-align: left;
+        }
+
+        @media print {
+            body { margin: 0; padding: 0; background: white; }
+            body * { visibility: hidden; }
+            #receipt, #receipt * { visibility: visible; }
+            #receipt { 
+                display: block !important; 
+                position: absolute; 
+                top: 2mm; 
+                left: 2mm; 
+                width: 76mm; 
+                height: auto !important;
+                border: 1px solid #000; 
+                overflow: hidden;
+            }
+            @page { 
+                size: 80mm auto; 
+                margin: 0mm; 
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="login-page">
+        <div class="login-card">
+            <h2 style="color:var(--primary); margin-top:0;">TOLL LOGIN</h2>
+            <input type="text" id="user" placeholder="Username">
+            <input type="password" id="pass" placeholder="Password">
+            <button class="login-btn" onclick="handleLogin()">LOGIN</button>
+        </div>
+    </div>
+
+    <div id="main-app" class="container hidden">
+        <h2 style="color:var(--primary); margin-bottom:5px;">Saliwada Toll Plaza</h2>
+        <p style="margin-top:0; font-size:12px;">National Highways Authority of India</p>
+        
+        <div class="vehicle-grid">
+            <div class="card" id="card1" onclick="selectVehicle(43.75, 'CAR/JEEP', 35, 'card1')">
+                <img src="car.png" alt="Car" onerror="this.src='https://cdn-icons-png.flaticon.com/512/744/744465.png'">
+                <b>CAR</b><br>₹43.75
+            </div>          
+            <div class="card" id="card2" onclick="selectVehicle(75.00, 'LCV', 60, 'card2')">
+                <img src="lcv.png" alt="LCV" onerror="this.src='https://www.pngkey.com/png/detail/114-1146133_delivery-png-photos-light-commercial-vehicles-icon.png'">
+                <b>LCV</b><br>₹75
+            </div>
+            <div class="card" id="card3" onclick="selectVehicle(156.25, 'TRUCK', 125, 'card3')">
+                <img src="truck.png" alt="Truck" onerror="this.src='https://static.vecteezy.com/system/resources/thumbnails/029/887/719/small_2x/minimal-and-abstract-logo-of-bus-icon-school-bus-silhouette-isolated-design-dark-bus-vector.jpg'">
+                <b>BUS & TRUCK</b><br>₹156.25
+            </div>       
+            <div class="card" id="card4" onclick="selectVehicle(168.75,'TRUCK-3XL', 135, 'card4')">
+                <img src="truck-3xl.png" alt="truck-3xl" onerror="this.src='https://png.pngtree.com/png-clipart/20250521/original/pngtree-an-orange-logistic-truck-with-container-png-image_21052117.png'">
+                <b>TRUCK-3XL</b><br>₹168.75
+            </div>    
+            <div class="card" id="card5" onclick="selectVehicle(243.75,'MAV-4XL', 195, 'card5')">
+                <img src="truck-3xl.png" alt="truck-3xl" onerror="this.src='https://png.pngtree.com/png-clipart/20250423/original/pngtree-truck-logo-icon-cargo-transportation-vehicle-front-view-vector-illustration-silhouette-png-image_20771336.png'">
+                <b>MAV-4XL</b><br>₹243.75
+            </div>    
+             <div class="card" id="card6" onclick="selectVehicle(300,'OSV', 240, 'card6')">
+                <img src="truck-3xl.png" alt="truck-3xl" onerror="this.src='https://png.pngtree.com/png-vector/20240921/ourlarge/pngtree-a-large-truck-is-prominently-displayed-against-transparent-background-emphasizing-its-png-image_13879879.png'">
+                <b>OSV</b><br>₹300
+            </div>
+        </div>
+
+        <input type="text" id="vNo" placeholder="Vehicle Number (e.g. MP20AB1234)">
+        <br><br>
+        <button class="action-btn" onclick="generateQR()">GENERATE PAYMENT QR</button>
+        
+        <div id="qr-area" class="hidden">
+            <div id="qr-box"></div>
+            <div class="qr-details">
+                <b>Vehicle:</b> <span id="det-class">-</span><br>
+                <b>Number:</b> <span id="det-no">-</span><br>
+                <b>Amount:</b> ₹<span id="det-amt">0</span><br>
+                <button onclick="printReceipt()" style="background:var(--secondary); color:white; border:none; padding:10px 20px; border-radius:5px; cursor:pointer; margin-top:10px; font-weight:bold;">PRINT SLIP</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ORIGINAL NHAI REPLICA SLIP -->
+    <div id="receipt">
+        <div class="receipt-header">
+            <img src="image.JPG" alt="NHAI" onerror="this.style.display='none'">
+            <div class="header-text">
+                <span style="font-size:11px;">Saliwada Toll Plaza</span><br>
+                <span>NATIONAL HIGHWAYS AUTHORITY OF INDIA</span>
+            </div>
+        </div>
+        
+        <table class="receipt-table">
+            <tr><td class="col-label">OPERATOR ID</td><td>: 2001</td></tr>
+            <tr>
+            <tr><td class="col-label">TICKET NUMBER</td><td>: <span id="res-ticket"></span></td></tr>
+                <td class="col-label">ISSUE DATE</td>
+                <td style="white-space: nowrap;">: <span id="res-date-time"></span></td>
+            </tr>
+           
+            <tr><td class="col-label">TICKET</td><td>: SINGLE TICKET</td></tr>
+            <tr><td class="col-label">LANE</td><td>: LANE1</td></tr>
+            <tr><td class="col-label">SHIFT</td><td>: SECOND SHIFT</td></tr>
+            <tr><td class="col-label">VEHICLE NO</td><td>: <span id="res-no"></span></td></tr>
+            <tr><td class="col-label">VEHICLE CLASS</td><td>: <span id="res-class"></span></td></tr>
+            <tr><td class="col-label">SUB CLASS</td><td>: <span id="res-sub-class"></span></td></tr>
+            <tr><td class="col-label">PAYMENT MODE</td><td>: UPI Dynamic QR</td></tr>
+        </table>
+        
+        <hr class="divider">
+        
+        <table class="receipt-table">
+            <tr><td class="col-label">TICKET AMOUNT</td><td>: Rs.<span id="res-ticket-amt"></span></td></tr>
+            <tr><td class="col-label">NON FASTAG CHARGE</td><td>: Rs.<span id="res-nonfastag"></span></td></tr>
+        </table>
+        
+        <hr class="divider">
+        
+        <table class="receipt-table" style="font-size: 11px;">
+            <tr><td class="col-label">TOTAL AMOUNT</td><td>: Rs.<span id="res-amt"></span></td></tr>
+        </table>
+        
+        <hr class="divider">
+        
+        <div class="footer-text">
+            HELPLINE NO. - 1033<br><br>
+            *** WISH YOU HAPPY JOURNEY ***
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script>
+        let currentPrice = 0, currentTicketAmt = 0, currentClass = "";
+
+        function handleLogin() {
+            const u = document.getElementById('user').value;
+            const p = document.getElementById('pass').value;
+            if(u === 'admin' && p === '1234') {
+                document.getElementById('login-page').classList.add('hidden');
+                document.getElementById('main-app').classList.remove('hidden');
+            } else { alert("Wrong Credentials!"); }
+        }
+
+        function selectVehicle(p, c, t, id) {
+            currentPrice = p; currentTicketAmt = t; currentClass = c;
+            document.querySelectorAll('.card').forEach(card => card.classList.remove('selected'));
+            document.getElementById(id).classList.add('selected');
+        }
+
+        function generateQR() {
+            let vnum = document.getElementById('vNo').value;
+            if(!currentPrice || !vnum) { alert("Select vehicle & enter number!"); return; }
+            
+            document.getElementById('det-class').innerText = currentClass;
+            document.getElementById('det-no').innerText = vnum.toUpperCase();
+            document.getElementById('det-amt').innerText = currentPrice;
+
+            document.getElementById('qr-box').innerHTML = "";
+            new QRCode(document.getElementById("qr-box"), {
+                text: "upi://pay?pa=Q255112245@ybl&am=" + currentPrice + "&pn=SaliwadaToll",
+                width: 120, height: 120
+            });
+            document.getElementById('qr-area').classList.remove('hidden');
+        }
+
+        function printReceipt() {
+            document.getElementById('res-no').innerText = document.getElementById('vNo').value.toUpperCase();
+            document.getElementById('res-class').innerText = currentClass;
+            document.getElementById('res-sub-class').innerText = currentClass;
+            document.getElementById('res-amt').innerText = currentPrice.toFixed(2);
+            document.getElementById('res-ticket-amt').innerText = currentTicketAmt;
+            document.getElementById('res-nonfastag').innerText = (currentPrice - currentTicketAmt).toFixed(2);
+
+            let n = new Date();
+            let dateStr = n.getFullYear() + "-" + (n.getMonth()+1).toString().padStart(2,'0') + "-" + n.getDate().toString().padStart(2,'0') + " " + n.getHours().toString().padStart(2,'0') + ":" + n.getMinutes().toString().padStart(2,'0') + ":" + n.getSeconds().toString().padStart(2,'0');
+            
+            document.getElementById('res-date-time').innerText = dateStr;
+            document.getElementById('res-ticket').innerText = "260924092404307101";
+
+            window.print();
+        }
+    </script>
+</body>
+</html>
